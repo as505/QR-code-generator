@@ -128,68 +128,37 @@ def create_horizontal_module_cell(size, binary, x, y):
             y += 1
              
 
-# TODO Simplify mask patern functions to use less duplicated code
+
+
 # MicroQR has 4 mask patterns
-def draw_mask_0():
-    j = 1
-    while (j < MODULECOUNT):
-        i = 1
-        while (i < MODULECOUNT):  
-            if (j % 2) == 0:
-                if i < 9 and j < 9:
-                    pass
-                else:
-                    module = screen.get_at((i+BORDER, j+BORDER))
-                    if module == WHITE:
-                        draw_module(BLACK, i+BORDER, j+BORDER)
-                    elif module == BLACK:
-                        draw_module(WHITE, i+BORDER, j+BORDER)
-            i = i + 1
-        j = j + 1
+# The mask Mask keyfunction determines how the mask pattern is generated,
+# while draw_mask() is responsible for generating and overlaying the mask pattern over the QR code 
+def mask_keyfunc_0(i, j):
+    if (j % 2) == 0:
+        return 1
 
 
-def draw_mask_1():
-    j = 1
-    while (j < MODULECOUNT):
-        i = 1
-        while (i < MODULECOUNT):  
-            if (((j//2)+(i//3)) % 2) == 0:
-                if i < 9 and j < 9:
-                    pass
-                else:
-                    module = screen.get_at((i+BORDER, j+BORDER))
-                    if module == WHITE:
-                        draw_module(BLACK, i+BORDER, j+BORDER)
-                    elif module == BLACK:
-                        draw_module(WHITE, i+BORDER, j+BORDER)
-            i = i + 1
-        j = j + 1
+def mask_keyfunc_1(i, j):
+    if (((j//2)+(i//3)) % 2) == 0:
+        return 1
 
 
-def draw_mask_2():
-    j = 1
-    while (j < MODULECOUNT):
-        i = 1
-        while (i < MODULECOUNT):  
-            if ((j*i % 2) + (j*i % 3)) % 2 == 0:
-                if i < 9 and j < 9:
-                    pass
-                else:
-                    module = screen.get_at((i+BORDER, j+BORDER))
-                    if module == WHITE:
-                        draw_module(BLACK, i+BORDER, j+BORDER)
-                    elif module == BLACK:
-                        draw_module(WHITE, i+BORDER, j+BORDER)
-            i = i + 1
-        j = j + 1
+def mask_keyfunc_2(i, j):
+    if ((j*i % 2) + (j*i % 3)) % 2 == 0:
+        return 1
 
 
-def draw_mask_3():
+def mask_keyfunc_3(i, j):
+    if (((i+j) % 2) + (i*j % 3)) % 2 == 0:
+        return 1
+
+# Generate and overlay mask over QR code
+def draw_mask(mask_keyfunc):
     j = 1
     while (j < MODULECOUNT):
         i = 1
         while (i < MODULECOUNT):
-            if (((i+j) % 2) + (i*j % 3)) % 2 == 0:
+            if mask_keyfunc(j, i):
                 if i < 9 and j < 9:
                     pass
                 else:
@@ -200,6 +169,7 @@ def draw_mask_3():
                         draw_module(WHITE, i+BORDER, j+BORDER)
             i = i + 1
         j = j + 1
+
 
 
 pygame.init()
@@ -233,7 +203,7 @@ while run:
     create_timing()
     create_vertical_module_cell(8, DATA, 12, 12)
     create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
-    draw_mask_3()
+    draw_mask(mask_keyfunc=mask_keyfunc_2)
 
     pygame.display.flip()
 
