@@ -1,5 +1,6 @@
 import pygame
 import reedsolo
+from PIL import Image
 
 # Debug input data
 DATA = 321                  # INPUT
@@ -56,7 +57,7 @@ def create_marker():
     pygame.draw.rect(screen, WHITE, rect_2)
     pygame.draw.rect(screen, BLACK, rect_3)
 
-
+# Creates timing pattern used to determine QR code size
 def create_timing():
     # Horizontal
     x = BORDER + 8 # Timing begins after whitespace border, and marker
@@ -171,6 +172,41 @@ def draw_mask(mask_keyfunc):
         j = j + 1
 
 
+# Print image file for QR code
+def print_QR_image(print_size):
+    output_image = Image.new('RGB', ((MODULECOUNT+BORDER*2)*print_size, (MODULECOUNT+BORDER*2)*print_size))
+    x = 0
+    y = 0
+    color = 0
+    while (y < MODULECOUNT+BORDER*2):
+        x = 0
+        while(x < MODULECOUNT+BORDER*2):
+            module = screen.get_at((x*MODULESIZE, y*MODULESIZE))
+            
+            if (module == BLACK):
+                color = BLACK
+            elif (module == WHITE):
+                color = WHITE
+
+            draw_scaled_pixel(output_image,scale=print_size, x=x*print_size, y=y*print_size, value=color)
+            x = x+1
+        y = y+1
+    
+    output_image.save('QR.png')
+
+# One module gets represented by one pixel, 
+# this function lets us scale that pixel by a power of 2 to make a higher resolution / larger image
+def draw_scaled_pixel(image, scale, x, y, value):
+    i = 0
+    j = 0
+    while (j < scale):
+        i = 0
+        while(i < scale):
+            image.putpixel(xy=(x+i, y+j), value=value)
+            i = i+1
+        j = j+1
+
+
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
@@ -180,12 +216,25 @@ pygame.display.set_caption("QR")
 
 
 run = True
-
+output_size = 1
 
 while run:
     for event in pygame.event.get():    
         if event.type == pygame.QUIT:
             run = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                output_size = output_size*2
+                print(f"SCALE : {output_size}")
+            elif event.key == pygame.K_DOWN:
+                # Minimum size is 1
+                if output_size < 2:
+                    output_size = int(1)
+                else:
+                    output_size = int(output_size/2)
+                print(f"SCALE : {output_size}")
+            elif event.key == pygame.K_p:
+                print_QR_image(output_size)
 
     # rezise QR code to fit screen
     screen_height = screen.get_height()
@@ -195,7 +244,8 @@ while run:
     if scalefactor > screen_height:
         scalefactor = screen_height
     # Set scale of qr code modules
-    MODULESIZE = scalefactor/(MODULECOUNT+1)/2
+    
+    MODULESIZE = int(scalefactor/(MODULECOUNT+1)/2)
 
     # Draw QR Code
     screen.fill(WHITE)
@@ -203,7 +253,7 @@ while run:
     create_timing()
     create_vertical_module_cell(8, DATA, 12, 12)
     create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
-    draw_mask(mask_keyfunc=mask_keyfunc_2)
+    draw_mask(mask_keyfunc=mask_keyfunc_3)
 
     pygame.display.flip()
 
