@@ -6,6 +6,19 @@ from PIL import Image
 DATA = 321                  # INPUT
 DB_1 = DATA.to_bytes(2)     # Used for Reed Solomon
 
+bitTest = "0101000001"                  # 321 in binary, padded to 10 bits
+bitTestCharacterCount = "011"           # 3 characters are encoded
+bitTestFullString = "0101000001011"     # Combine to one string
+# MicroQR size 1 has 3 data blocks
+bitTestBlock1 = "00001011"
+bitTestBlock2 = "00001010"
+bitTestBlock3 = "0000"                  # Third datablock for size 1 only holds 4 modules
+
+
+# Test Reed solomon
+rcs = reedsolo.RSCodec(2)
+ecTestBlock1 = rcs.encode(DB_1)
+
 # Default window size
 WIDTH = 360
 HEIGHT = 480
@@ -33,11 +46,6 @@ elif VERSION == 3:
     MODULECOUNT = 15
 elif VERSION == 4:
     MODULECOUNT = 17
-
-
-# Test Reed solomon
-rcs = reedsolo.RSCodec(2)
-test = rcs.encode(DB_1)
 
 
 DATAWRITEX = MODULECOUNT-1
@@ -78,7 +86,8 @@ def create_timing():
 # TODO dynamically change module shape to fit all qr versions
 def create_vertical_module_cell(size, binary, x, y):
     CurrentDigit = 0
-    bitmask = 0b0
+    #bitmask = 0 << size
+    bitmask = "0"
     cellX = 0
     y -= 3
     x -= 1
@@ -101,6 +110,32 @@ def create_vertical_module_cell(size, binary, x, y):
             y += 1
         else:
             x += 1
+
+
+def write_rect_module_cell(width, binary, x, y, upwards):
+    cellX = 0
+    cellY = 0
+    if upwards:
+        direction = 1
+        cellX = x
+        cellY = y
+    else:
+        direction = -1
+        raise ValueError("ERROR, DOWNWARD MODULE NOT IMPLEMENTED YET")
+
+    for bit in list(binary):
+    
+        if bit == "1":
+            draw_module(BLACK, cellX, cellY)
+        
+        cellX = cellX + direction
+        if (cellX > x+width):
+            cellX = x
+            cellY += direction
+        elif (cellX < x):
+            cellX = x+width
+            cellY += direction
+
 
 
 def create_horizontal_module_cell(size, binary, x, y):
@@ -251,9 +286,15 @@ while run:
     screen.fill(WHITE)
     create_marker()
     create_timing()
-    create_vertical_module_cell(8, DATA, 12, 12)
-    create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
-    draw_mask(mask_keyfunc=mask_keyfunc_3)
+    #create_vertical_module_cell(8, bitTestBlock1, 12, 12)
+    #create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
+    # Data Blocks
+    write_rect_module_cell(2, bitTestBlock3, 11, 1, True)
+    write_rect_module_cell(2, bitTestBlock2, 11, 5, True)
+    write_rect_module_cell(2, bitTestBlock1, 11, 9, True)
+    # EC Blocks
+    write_rect_module_cell(4, ecTestBlock1, 7, 11, True)
+    #draw_mask(mask_keyfunc=mask_keyfunc_0)
 
     pygame.display.flip()
 
