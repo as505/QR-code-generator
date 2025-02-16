@@ -1,6 +1,7 @@
 import pygame
 import reedsolo
 from PIL import Image
+from bitstring import BitArray
 
 # Debug input data
 DATA = 321                  # INPUT
@@ -8,7 +9,7 @@ DB_1 = DATA.to_bytes(2)     # Used for Reed Solomon
 
 bitTest = "0101000001"                  # 321 in binary, padded to 10 bits
 bitTestCharacterCount = "011"           # 3 characters are encoded
-bitTestFullString = "0101000001011"     # Combine to one string
+bitTestFullString = "00000000101000001011"     # Combine to one string
 # MicroQR size 1 has 3 data blocks
 bitTestBlock1 = "00001011"
 bitTestBlock2 = "00001010"
@@ -17,7 +18,22 @@ bitTestBlock3 = "0000"                  # Third datablock for size 1 only holds 
 
 # Test Reed solomon
 rcs = reedsolo.RSCodec(2)
-ecTestBlock1 = rcs.encode(DB_1)
+ecTestBlock1 = rcs.encode(b'00000000101000001011')
+ecTestVar = rcs.encode(DB_1)
+
+#ecBits = BitArray(ecTestBlock1).bin
+#print(ecTestBlock1)
+#print(rcs.decode(ecTestBlock1))
+
+bitECblock1 = []
+bitECblock2 = []
+ec_written_bits = 0
+for bit in ecTestBlock1:
+    if ec_written_bits < 8:
+        bitECblock1.append(bit)
+    else:
+        bitECblock2.append(bit)
+    ec_written_bits += 1
 
 # Default window size
 WIDTH = 360
@@ -30,8 +46,8 @@ MODULESIZE = 10
 MODULECOUNT = 0
 BORDER = 2
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+WHITE = (255, 255, 255, 255)
+BLACK = (0, 0, 0, 255)
 
 ### Set number of modules
 ### Micro QR can have 4 sizes
@@ -82,46 +98,15 @@ def create_timing():
         y += 2
 
 
-# TODO Fix module order in module cell functions
-# TODO dynamically change module shape to fit all qr versions
-def create_vertical_module_cell(size, binary, x, y):
-    CurrentDigit = 0
-    #bitmask = 0 << size
-    bitmask = "0"
-    cellX = 0
-    y -= 3
-    x -= 1
-    # Extract bit from binary number
-    while CurrentDigit < size:
 
-        bitmask = 1 << CurrentDigit
-        digit = binary & bitmask
-        digit = digit >> CurrentDigit
-
-        CurrentDigit += 1
-        # Draw if 1
-        if digit:
-            draw_module(BLACK, x, y)
-        
-        cellX += 1
-        if cellX > 1:
-            cellX = 0
-            x -= 1
-            y += 1
-        else:
-            x += 1
-
-
-def write_rect_module_cell(width, binary, x, y, upwards):
-    cellX = 0
-    cellY = 0
+def write_rect_module_cell(binary, x, y, upwards):
+    cellX = x
+    cellY = y
     if upwards:
         direction = 1
-        cellX = x
-        cellY = y
     else:
         direction = -1
-        raise ValueError("ERROR, DOWNWARD MODULE NOT IMPLEMENTED YET")
+        cellX += 1
 
     for bit in list(binary):
     
@@ -129,32 +114,48 @@ def write_rect_module_cell(width, binary, x, y, upwards):
             draw_module(BLACK, cellX, cellY)
         
         cellX = cellX + direction
-        if (cellX > x+width):
+        if (cellX > x+2):
             cellX = x
-            cellY += direction
+            cellY += 1
         elif (cellX < x):
-            cellX = x+width
-            cellY += direction
+            cellX = x+2
+            cellY += 1
 
 
+def find_next_position():
+    pass
 
-def create_horizontal_module_cell(size, binary, x, y):
+# Temp function
+def create_horizontal_module_cell(binary, x, y):
+    n = 8
+    down_block = [4]
+    up_block = [4]
+    for bit in binary:
+        print(bit)
+        if n > 4:
+            down_block.append(bit)
+            n -= 1
+        else:
+            up_block.append(bit)
+    
+    write_rect_module_cell(up_block, x-2, y, True)
+    write_rect_module_cell(down_block, x, y, False)
+             
+def create_test_ec_module_cell(binary, x, y):
     CurrentDigit = 0
     bitmask = 0b0
     module = 0
     # Extract bit from binary number
-    while CurrentDigit < size:
-
+    while CurrentDigit < 16:
         bitmask = 1 << CurrentDigit
         digit = binary & bitmask
         digit = digit >> CurrentDigit
-
         CurrentDigit += 1
         # Draw if 1
         if digit:
             draw_module(BLACK, x, y)
-
         module += 1
+
         if module == 3:
             x -= 1
             y -= 1
@@ -162,8 +163,6 @@ def create_horizontal_module_cell(size, binary, x, y):
         if module == 6:
             x -= 1
             y += 1
-             
-
 
 
 # MicroQR has 4 mask patterns
@@ -195,10 +194,10 @@ def draw_mask(mask_keyfunc):
         i = 1
         while (i < MODULECOUNT):
             if mask_keyfunc(j, i):
-                if i < 9 and j < 9:
+                if (i < 9 and j < 9):
                     pass
                 else:
-                    module = screen.get_at((i+BORDER, j+BORDER))
+                    module = screen.get_at(((i+BORDER)*MODULESIZE, (j+BORDER)*MODULESIZE))
                     if module == WHITE:
                         draw_module(BLACK, i+BORDER, j+BORDER)
                     elif module == BLACK:
@@ -289,12 +288,13 @@ while run:
     #create_vertical_module_cell(8, bitTestBlock1, 12, 12)
     #create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
     # Data Blocks
-    write_rect_module_cell(2, bitTestBlock3, 11, 1, True)
-    write_rect_module_cell(2, bitTestBlock2, 11, 5, True)
-    write_rect_module_cell(2, bitTestBlock1, 11, 9, True)
+    write_rect_module_cell(bitTestBlock3, 11, 1, True)
+    write_rect_module_cell(bitTestBlock2, 11, 5, True)
+    write_rect_module_cell(bitTestBlock1, 11, 9, True)
     # EC Blocks
-    write_rect_module_cell(4, ecTestBlock1, 7, 11, True)
-    #draw_mask(mask_keyfunc=mask_keyfunc_0)
+    #create_horizontal_module_cell(ecTestVar, 7, 11)
+    create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
+    draw_mask(mask_keyfunc=mask_keyfunc_0)
 
     pygame.display.flip()
 
