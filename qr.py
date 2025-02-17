@@ -7,23 +7,37 @@ from bitstring import BitArray
 DATA = 321                  # INPUT
 DB_1 = DATA.to_bytes(2)     # Used for Reed Solomon
 
-bitTest = "0101000001"                  # 321 in binary, padded to 10 bits
-bitTestCharacterCount = "011"           # 3 characters are encoded
-bitTestFullString = "00000000101000001011"     # Combine to one string
-# MicroQR size 1 has 3 data blocks
-bitTestBlock1 = "00001011"
-bitTestBlock2 = "00001010"
-bitTestBlock3 = "0000"                  # Third datablock for size 1 only holds 4 modules
+'''
+input = 321
 
+input data is split into groups of 3 digits
+    321
+each group is converted to binary
+    0101000001
+character count is 3 for 3 digits
+m1 character count is 3 bits binary
+    011
+mode indicator is 0 bits for m1, since it only supports numerical
+N/A + 011 + 0101000001
+=
+011 0101000001
+
+split into groups 8, 8, 4
+
+01101010 00001000 0000
+'''
+bitTestBlock1 = "01101010"
+bitTestBlock2 = "00001000"
+bitTestBlock3 = "0000"
 
 # Test Reed solomon
 rcs = reedsolo.RSCodec(2)
-ecTestBlock1 = rcs.encode(b'00000000101000001011')
 ecTestVar = rcs.encode(DB_1)
 
-#ecBits = BitArray(ecTestBlock1).bin
+
+'''
+ecTestBlock1 = rcs.encode(b'00000000101000001011')
 #print(ecTestBlock1)
-#print(rcs.decode(ecTestBlock1))
 
 bitECblock1 = []
 bitECblock2 = []
@@ -34,6 +48,10 @@ for bit in ecTestBlock1:
     else:
         bitECblock2.append(bit)
     ec_written_bits += 1
+
+#print(rcs.decode(ecTestBlock1))
+#ecBits = BitArray(ecTestBlock1).bin
+'''
 
 # Default window size
 WIDTH = 360
@@ -114,11 +132,11 @@ def write_rect_module_cell(binary, x, y, upwards):
             draw_module(BLACK, cellX, cellY)
         
         cellX = cellX + direction
-        if (cellX > x+2):
+        if (cellX > x+1):
             cellX = x
             cellY += 1
         elif (cellX < x):
-            cellX = x+2
+            cellX = x+1
             cellY += 1
 
 
@@ -288,13 +306,12 @@ while run:
     #create_vertical_module_cell(8, bitTestBlock1, 12, 12)
     #create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
     # Data Blocks
-    write_rect_module_cell(bitTestBlock3, 11, 1, True)
-    write_rect_module_cell(bitTestBlock2, 11, 5, True)
     write_rect_module_cell(bitTestBlock1, 11, 9, True)
+    write_rect_module_cell(bitTestBlock2, 11, 5, True)
+    write_rect_module_cell(bitTestBlock3, 11, 3, True)
     # EC Blocks
-    #create_horizontal_module_cell(ecTestVar, 7, 11)
-    create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
-    draw_mask(mask_keyfunc=mask_keyfunc_0)
+    #create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
+    draw_mask(mask_keyfunc=mask_keyfunc_3)
 
     pygame.display.flip()
 
