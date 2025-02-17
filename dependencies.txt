@@ -1,0 +1,8 @@
+
+Pygame
+reedsolo
+Pillow
+
+pip install pygame
+pip install reedsolo
+pip install Pillow

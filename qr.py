@@ -1,7 +1,7 @@
 import pygame
 import reedsolo
 from PIL import Image
-from bitstring import BitArray
+import galois
 
 # Debug input data
 DATA = 321                  # INPUT
@@ -34,6 +34,34 @@ bitTestBlock3 = "0000"
 rcs = reedsolo.RSCodec(2)
 ecTestVar = rcs.encode(DB_1)
 
+'''
+Format information is 15 bits, 5 data and 10 EC bits
+Symbol number is 3 bits for micro qr
+The remaining 2 bits contain mask pattern
+
+Format information is encoded with BCH(15,5)
+
+000 11 for mask 4
+
+Encode with BCH, and XOR with the bitstring 100010001000101
+This is a magic number to prevent all 0 modules
+'''
+
+# THIS IS A VERY SLOW FUNCTION FOR SOME REASON, 
+# MUST BE TURNED BACK ON FOR DIFFERENT MASK PATTERNS
+"""
+bch = galois.BCH(15, 5)
+fi_bits = bch.encode([0,0,0,1,1])
+"""
+fi_bits = [0,0,0,1,1,1,1,0,1,0,1,1,0,0,1] # This is for M1 with mask 4
+xor = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,1]
+xor_fi_bits = []
+
+n = 0
+while n < 15:
+    xor_fi_bits.append(fi_bits[n] ^ xor[n])
+    n += 1
+
 
 '''
 ecTestBlock1 = rcs.encode(b'00000000101000001011')
@@ -50,7 +78,6 @@ for bit in ecTestBlock1:
     ec_written_bits += 1
 
 #print(rcs.decode(ecTestBlock1))
-#ecBits = BitArray(ecTestBlock1).bin
 '''
 
 # Default window size
@@ -115,7 +142,22 @@ def create_timing():
         draw_module(BLACK, x, y)
         y += 2
 
+def create_format_information(binary_array):
+    # Format information begins next to marker, going down and to the left
+    x = BORDER + 8
+    y = BORDER + 1
+    written_count = 0
+    # down
+    while written_count < 15:
+        if binary_array[written_count] == 1:
+            draw_module(BLACK, x, y)
+        if written_count < 7:
+            y += 1
+        else:
+            x -= 1
+        written_count += 1
 
+    # left
 
 def write_rect_module_cell(binary, x, y, upwards):
     cellX = x
@@ -149,7 +191,6 @@ def create_horizontal_module_cell(binary, x, y):
     down_block = [4]
     up_block = [4]
     for bit in binary:
-        print(bit)
         if n > 4:
             down_block.append(bit)
             n -= 1
@@ -266,7 +307,6 @@ pygame.display.set_caption("QR")
 
 
 
-
 run = True
 output_size = 1
 
@@ -303,14 +343,14 @@ while run:
     screen.fill(WHITE)
     create_marker()
     create_timing()
-    #create_vertical_module_cell(8, bitTestBlock1, 12, 12)
-    #create_horizontal_module_cell(8, int.from_bytes(test), 12-4, 12)
+    create_format_information(xor_fi_bits)
     # Data Blocks
     write_rect_module_cell(bitTestBlock1, 11, 9, True)
     write_rect_module_cell(bitTestBlock2, 11, 5, True)
     write_rect_module_cell(bitTestBlock3, 11, 3, True)
     # EC Blocks
-    #create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
+    create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
+    # Mask
     draw_mask(mask_keyfunc=mask_keyfunc_3)
 
     pygame.display.flip()
