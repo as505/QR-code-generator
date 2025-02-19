@@ -25,6 +25,9 @@ N/A + 011 + 0101000001
 split into groups 8, 8, 4
 
 01101010 00001000 0000
+
+
+
 '''
 bitTestBlock1 = "01101010"
 bitTestBlock2 = "00001000"
@@ -258,8 +261,10 @@ def draw_mask(mask_keyfunc):
     while (j < MODULECOUNT):
         i = 1
         while (i < MODULECOUNT):
-            if mask_keyfunc(j, i):
+            if mask_keyfunc(i, j):
                 if (i < 9 and j < 9):
+                    pass
+                elif (j < 3): # not sure about this one, trying to reverse engineer against another qr code generator
                     pass
                 else:
                     module = screen.get_at(((i+BORDER)*MODULESIZE, (j+BORDER)*MODULESIZE))
@@ -267,6 +272,8 @@ def draw_mask(mask_keyfunc):
                         draw_module(BLACK, i+BORDER, j+BORDER)
                     elif module == BLACK:
                         draw_module(WHITE, i+BORDER, j+BORDER)
+                        
+
             i = i + 1
         j = j + 1
 
@@ -355,9 +362,9 @@ while run:
     write_rect_module_cell(bitTestBlock2, 12, 8, True)
     write_rect_module_cell(bitTestBlock3, 12, 4, True)
     # EC Blocks
-    #create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
+    create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
     # Mask
-    #draw_mask(mask_keyfunc=mask_keyfunc_1)
+    draw_mask(mask_keyfunc=mask_keyfunc_1)
 
     pygame.display.flip()
 
