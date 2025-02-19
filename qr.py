@@ -12,12 +12,12 @@ input = 321
 
 input data is split into groups of 3 digits
     321
-each group is converted to binary
+each group is converted to 10-bit binary groups
     0101000001
 character count is 3 for 3 digits
 m1 character count is 3 bits binary
     011
-mode indicator is 0 bits for m1, since it only supports numerical
+mode indicator is 0 bits for m1, since it only supports numerical mode
 N/A + 011 + 0101000001
 =
 011 0101000001
@@ -50,13 +50,13 @@ This is a magic number to prevent all 0 modules
 # THIS IS A VERY SLOW FUNCTION FOR SOME REASON, 
 # MUST BE TURNED BACK ON FOR DIFFERENT MASK PATTERNS
 """
-bch = galois.BCH(15, 5)
-fi_bits = bch.encode([0,0,0,1,1])
-"""
+bch = galois.BCH(15, 5) 
+fi_bits = bch.encode([0,0,0,0,1])
 fi_bits = [0,0,0,1,1,1,1,0,1,0,1,1,0,0,1] # This is for M1 with mask 4
-xor = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,1]
+"""
+fi_bits = [0,0,0,0,1,0,1,0,0,1,1,0,1,1,1] # This is for M1 with mask 2
+xor = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,1]       # This is always the same for all microQR codes
 xor_fi_bits = []
-
 n = 0
 while n < 15:
     xor_fi_bits.append(fi_bits[n] ^ xor[n])
@@ -144,17 +144,17 @@ def create_timing():
 
 def create_format_information(binary_array):
     # Format information begins next to marker, going down and to the left
-    x = BORDER + 8
-    y = BORDER + 1
+    x = BORDER + 1
+    y = BORDER + 8
     written_count = 0
     # down
     while written_count < 15:
         if binary_array[written_count] == 1:
             draw_module(BLACK, x, y)
         if written_count < 7:
-            y += 1
+            x += 1
         else:
-            x -= 1
+            y -= 1
         written_count += 1
 
     # left
@@ -355,9 +355,9 @@ while run:
     write_rect_module_cell(bitTestBlock2, 12, 8, True)
     write_rect_module_cell(bitTestBlock3, 12, 4, True)
     # EC Blocks
-    create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
+    #create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
     # Mask
-    draw_mask(mask_keyfunc=mask_keyfunc_3)
+    #draw_mask(mask_keyfunc=mask_keyfunc_1)
 
     pygame.display.flip()
 
