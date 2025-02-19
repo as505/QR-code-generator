@@ -116,7 +116,7 @@ def draw_module(col, x, y):
     rect = pygame.Rect(x*MODULESIZE, y*MODULESIZE, MODULESIZE, MODULESIZE)
     pygame.draw.rect(screen, col, rect)
 
-
+# Creates the marker square in the top left corner
 def create_marker():
     #draw_module(BLACK, 2, 2)
     rect_1 = pygame.Rect((BORDER)*MODULESIZE, (BORDER)*MODULESIZE, MODULESIZE*7, MODULESIZE*7)
@@ -126,7 +126,7 @@ def create_marker():
     pygame.draw.rect(screen, WHITE, rect_2)
     pygame.draw.rect(screen, BLACK, rect_3)
 
-# Creates timing pattern used to determine QR code size
+# Creates timing pattern used to store QR code size
 def create_timing():
     # Horizontal
     x = BORDER + 8 # Timing begins after whitespace border, and marker
@@ -163,23 +163,19 @@ def write_rect_module_cell(binary, x, y, upwards):
     cellX = x
     cellY = y
     if upwards:
-        direction = 1
-    else:
         direction = -1
-        cellX += 1
+    else:
+        direction = +1
 
     for bit in list(binary):
     
         if bit == "1":
             draw_module(BLACK, cellX, cellY)
         
-        cellX = cellX + direction
-        if (cellX > x+1):
+        cellX -= 1
+        if (cellX < x-1):
             cellX = x
-            cellY += 1
-        elif (cellX < x):
-            cellX = x+1
-            cellY += 1
+            cellY += direction
 
 
 def find_next_position():
@@ -199,7 +195,9 @@ def create_horizontal_module_cell(binary, x, y):
     
     write_rect_module_cell(up_block, x-2, y, True)
     write_rect_module_cell(down_block, x, y, False)
-             
+
+
+
 def create_test_ec_module_cell(binary, x, y):
     CurrentDigit = 0
     bitmask = 0b0
@@ -222,6 +220,8 @@ def create_test_ec_module_cell(binary, x, y):
         if module == 6:
             x -= 1
             y += 1
+        
+
 
 
 # MicroQR has 4 mask patterns
@@ -345,9 +345,9 @@ while run:
     create_timing()
     create_format_information(xor_fi_bits)
     # Data Blocks
-    write_rect_module_cell(bitTestBlock1, 11, 9, True)
-    write_rect_module_cell(bitTestBlock2, 11, 5, True)
-    write_rect_module_cell(bitTestBlock3, 11, 3, True)
+    write_rect_module_cell(bitTestBlock1, 12, 12, True)
+    write_rect_module_cell(bitTestBlock2, 12, 8, True)
+    write_rect_module_cell(bitTestBlock3, 12, 4, True)
     # EC Blocks
     create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
     # Mask
