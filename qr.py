@@ -201,7 +201,10 @@ def create_horizontal_module_cell(binary, x, y):
 def create_test_ec_module_cell(binary, x, y):
     CurrentDigit = 0
     bitmask = 0b0
-    module = 0
+    moduleN = 0
+    direction = -1
+    cellX = x
+    cellY = y
     # Extract bit from binary number
     while CurrentDigit < 16:
         bitmask = 1 << CurrentDigit
@@ -210,16 +213,19 @@ def create_test_ec_module_cell(binary, x, y):
         CurrentDigit += 1
         # Draw if 1
         if digit:
-            draw_module(BLACK, x, y)
-        module += 1
-
-        if module == 3:
-            x -= 1
-            y -= 1
+            draw_module(BLACK, cellX, cellY)
+        moduleN += 1
         
-        if module == 6:
-            x -= 1
-            y += 1
+        # when border is reached, move left to next column and reverse direction
+        if moduleN % 4 == 0:
+            direction *= -1
+            cellX -= 1
+            x -= 2
+        else:
+            cellX -= 1
+            if (cellX < x-1):
+                cellX = x
+                cellY += direction
         
 
 
@@ -349,7 +355,7 @@ while run:
     write_rect_module_cell(bitTestBlock2, 12, 8, True)
     write_rect_module_cell(bitTestBlock3, 12, 4, True)
     # EC Blocks
-    create_test_ec_module_cell(int.from_bytes(ecTestVar), 7, 11)
+    create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
     # Mask
     draw_mask(mask_keyfunc=mask_keyfunc_3)
 
