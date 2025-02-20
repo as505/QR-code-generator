@@ -36,7 +36,12 @@ bitTestBlock3 = "0000"
 # Test Reed solomon
 rcs = reedsolo.RSCodec(2)
 ecTestVar = rcs.encode(DB_1)
-
+print(DB_1)
+print(rcs.encode(DB_1))
+ec_trash, ec_trash2, ec1, ec2 = rcs.encode(DB_1)
+print(ec_trash.to_bytes(2), ec_trash2.to_bytes(2), ec1.to_bytes(2), ec2.to_bytes(2))
+# 11000100   10000100
+print(bin(ec1), " ", bin(ec2))
 '''
 Format information is 15 bits, 5 data and 10 EC bits
 Symbol number is 3 bits for micro qr
@@ -201,19 +206,16 @@ def create_horizontal_module_cell(binary, x, y):
 
 
 
-def create_test_ec_module_cell(binary, x, y):
-    CurrentDigit = 0
-    bitmask = 0b0
+def create_test_ec_module_cell(binary, x, y, len=8):
+    CurrentDigit = len-1
     moduleN = 0
     direction = -1
     cellX = x
     cellY = y
     # Extract bit from binary number
-    while CurrentDigit < 16:
-        bitmask = 1 << CurrentDigit
-        digit = binary & bitmask
-        digit = digit >> CurrentDigit
-        CurrentDigit += 1
+    while CurrentDigit >= 0:
+        digit = binary >> CurrentDigit & 1
+        CurrentDigit -= 1
         # Draw if 1
         if digit:
             draw_module(BLACK, cellX, cellY)
@@ -318,7 +320,7 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("QR")
 
-
+#create_test_ec_module_cell(ec1, 10, 12)
 
 run = True
 output_size = 1
@@ -362,7 +364,8 @@ while run:
     write_rect_module_cell(bitTestBlock2, 12, 8, True)
     write_rect_module_cell(bitTestBlock3, 12, 4, True)
     # EC Blocks
-    create_test_ec_module_cell(int.from_bytes(ecTestVar), 10, 12)
+    create_test_ec_module_cell(ec2, 10, 12)
+    create_test_ec_module_cell(ec1, 6, 12)
     # Mask
     draw_mask(mask_keyfunc=mask_keyfunc_1)
 
